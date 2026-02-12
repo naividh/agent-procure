@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AgentProcure - Autonomous Research Agent</title>
+<style>
+:root{--bg:#0a0a0f;--surface:#12121a;--surface2:#1a1a2e;--border:#2a2a3e;--text:#e0e0f0;--text2:#8888aa;--accent:#6c5ce7;--accent2:#a29bfe;--green:#00b894;--red:#ff6b6b;--orange:#fdcb6e;--blue:#74b9ff}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'SF Mono','Fira Code',Consolas,monospace;background:var(--bg);color:var(--text);min-height:100vh}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+header{display:flex;align-items:center;gap:16px;padding:24px 0;border-bottom:1px solid var(--border);margin-bottom:32px}
+header h1{font-size:24px;color:var(--accent2)}
+.badge{background:var(--accent);color:#fff;font-size:11px;padding:3px 10px;border-radius:12px;font-weight:600}
+.input-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:24px}
+.input-section label{display:block;font-size:12px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:1px}
+.input-row{display:flex;gap:12px}
+.input-row input[type="text"]{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+.input-row input[type="text"]:focus{border-color:var(--accent)}
+.input-row input[type="number"]{width:100px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;color:var(--text);font-family:inherit;font-size:14px;outline:none}
+button.run-btn{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:12px 28px;font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+button.run-btn:hover{background:var(--accent2)} button.run-btn:disabled{opacity:.5;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px}
+.card h3{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.stat{font-size:28px;font-weight:700} .stat.green{color:var(--green)} .stat.orange{color:var(--orange)} .stat.blue{color:var(--blue)}
+.status-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:600}
+.status-running{background:rgba(253,203,110,.15);color:var(--orange)} .status-complete{background:rgba(0,184,148,.15);color:var(--green)} .status-error{background:rgba(255,107,107,.15);color:var(--red)}
+.audit-trail,.report-section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:24px}
+.audit-trail h3,.report-section h3{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:16px}
+.audit-entry{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);font-size:13px}
+.audit-entry:last-child{border-bottom:none} .audit-icon{font-size:16px;min-width:24px;text-align:center}
+.audit-details{flex:1} .audit-action{font-weight:600;color:var(--accent2)} .audit-meta{color:var(--text2);font-size:12px;margin-top:2px}
+.audit-cost{color:var(--orange);font-weight:600;min-width:60px;text-align:right}
+.report-content{white-space:pre-wrap;font-size:13px;line-height:1.7}
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)} .empty-state .icon{font-size:48px;margin-bottom:16px}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top:2px solid var(--accent);border-radius:50%;animation:spin .8s linear infinite;vertical-align:middle;margin-right:8px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.budget-bar{height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;margin-top:8px}
+.budget-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:4px;transition:width .5s}
+.flow-diagram{display:flex;align-items:center;justify-content:center;gap:8px;padding:16px;margin-bottom:24px;font-size:13px;color:var(--text2)}
+.flow-step{padding:6px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);transition:all .3s}
+.flow-step.active{border-color:var(--accent);color:var(--accent2);background:rgba(108,92,231,.1)}
+.flow-step.done{border-color:var(--green);color:var(--green);background:rgba(0,184,148,.1)}
+.flow-arrow{color:var(--border)}
+</style>
+</head>
+<body>
+<div class="container">
+<header><h1>AgentProcure</h1><span class="badge">x402 Hackathon</span><span style="flex:1"></span><span style="color:var(--text2);font-size:12px">Autonomous Research Agent with x402 Payments</span></header>
+<div class="flow-diagram">
+<div class="flow-step" id="flow-discover">Discover</div><span class="flow-arrow">-></span>
+<div class="flow-step" id="flow-reason">Reason</div><span class="flow-arrow">-></span>
+<div class="flow-step" id="flow-pay">Pay (x402)</div><span class="flow-arrow">-></span>
+<div class="flow-step" id="flow-settle">Settle</div><span class="flow-arrow">-></span>
+<div class="flow-step" id="flow-report">Report</div>
+</div>
+<div class="input-section"><label>Research Query</label>
+<div class="input-row">
+<input type="text" id="query" placeholder="e.g. Analyze the agentic commerce market landscape...">
+<input type="number" id="budget" value="1.00" step="0.10" min="0.01">
+<button class="run-btn" id="runBtn" onclick="startAgent()">Run Agent</button>
+</div></div>
+<div class="grid">
+<div class="card"><h3>Status</h3><div id="statusDisplay"><span class="status-badge status-complete">IDLE</span></div></div>
+<div class="card"><h3>Budget</h3><div id="budgetDisplay"><span class="stat blue">$1.00</span><div class="budget-bar"><div class="budget-bar-fill" id="budgetBar" style="width:0%"></div></div></div></div>
+<div class="card"><h3>Sources Queried</h3><div id="sourcesDisplay"><span class="stat green">-</span></div></div>
+<div class="card"><h3>Total Spent</h3><div id="spentDisplay"><span class="stat orange">$0.00</span></div></div>
+</div>
+<div class="audit-trail" id="auditSection" style="display:none"><h3>Audit Trail / Receipts</h3><div id="auditEntries"></div></div>
+<div class="report-section" id="reportSection" style="display:none"><h3>Research Report</h3><div class="report-content" id="reportContent"></div></div>
+<div class="empty-state" id="emptyState"><div class="icon">?</div><p>Enter a research query and click Run Agent.<br>The agent will discover paid APIs, reason about costs,<br>pay via x402, and synthesize a report.</p></div>
+</div>
+<script>
+let pollInterval=null;
+async function startAgent(){
+const query=document.getElementById('query').value.trim();
+const budget=parseFloat(document.getElementById('budget').value)||1;
+if(!query)return alert('Enter a query');
+document.getElementById('runBtn').disabled=true;
+document.getElementById('emptyState').style.display='none';
+document.getElementById('auditSection').style.display='block';
+document.getElementById('auditEntries').innerHTML='';
+document.getElementById('reportSection').style.display='none';
+document.getElementById('statusDisplay').innerHTML='<span class="spinner"></span><span class="status-badge status-running">RUNNING</span>';
+document.getElementById('budgetDisplay').innerHTML='<span class="stat blue">$'+budget.toFixed(2)+'</span><div class="budget-bar"><div class="budget-bar-fill" style="width:0%"></div></div>';
+document.getElementById('sourcesDisplay').innerHTML='<span class="stat green">...</span>';
+document.getElementById('spentDisplay').innerHTML='<span class="stat orange">$0.00</span>';
+setFlowStep('discover');
+try{const res=await fetch('/api/run',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({query,budget})});
+const{sessionId}=await res.json();pollInterval=setInterval(()=>pollSession(sessionId,budget),1000);
+}catch(e){document.getElementById('statusDisplay').innerHTML='<span class="status-badge status-error">ERROR</span>';document.getElementById('runBtn').disabled=false;}}
+
+async function pollSession(id,budget){
+try{const res=await fetch('/api/session/'+id);const session=await res.json();
+if(session.status==='complete'){clearInterval(pollInterval);showResult(session,budget);}
+else if(session.status==='error'){clearInterval(pollInterval);
+document.getElementById('statusDisplay').innerHTML='<span class="status-badge status-error">ERROR: '+(session.error||'Unknown')+'</span>';
+document.getElementById('runBtn').disabled=false;}}catch(e){}}
+
+function showResult(session,budget){
+const trail=session.result.auditTrail,report=session.result.report;
+document.getElementById('statusDisplay').innerHTML='<span class="status-badge status-complete">COMPLETE</span>';
+document.getElementById('spentDisplay').innerHTML='<span class="stat orange">$'+trail.totalSpent.toFixed(4)+'</span>';
+const pct=Math.min(100,(trail.totalSpent/budget)*100);
+document.getElementById('budgetDisplay').innerHTML='<span class="stat blue">$'+budget.toFixed(2)+'</span><div class="budget-bar"><div class="budget-bar-fill" style="width:'+pct+'%"></div></div>';
+const ok=trail.entries.filter(e=>e.status==='success'&&e.cost!=='$0.00');
+document.getElementById('sourcesDisplay').innerHTML='<span class="stat green">'+ok.length+'</span>';
+setFlowStep('done');
+const html=trail.entries.map(e=>{const icon=e.status==='success'?'OK':e.status==='failed'?'FAIL':e.status==='skipped'?'SKIP':'...';
+return '<div class="audit-entry"><div class="audit-icon">'+icon+'</div><div class="audit-details"><div><span class="audit-action">'+e.action+'</span> - '+e.service+' <code>'+e.endpoint+'</code></div><div class="audit-meta">'+e.reason+(e.duration?' ('+e.duration+'ms)':'')+'</div></div><div class="audit-cost">'+e.cost+'</div></div>';}).join('');
+document.getElementById('auditEntries').innerHTML=html;
+document.getElementById('reportSection').style.display='block';
+document.getElementById('reportContent').textContent=report;
+document.getElementById('runBtn').disabled=false;}
+
+function setFlowStep(step){
+const steps=['discover','reason','pay','settle','report'];
+const all=['flow-discover','flow-reason','flow-pay','flow-settle','flow-report'];
+all.forEach(s=>document.getElementById(s).className='flow-step');
+if(step==='done'){all.forEach(s=>document.getElementById(s).className='flow-step done');return;}
+const idx=steps.indexOf(step);
+for(let i=0;i<=idx;i++)document.getElementById(all[i]).className=i<idx?'flow-step done':'flow-step active';}
+</script>
+</body>
+</html>
